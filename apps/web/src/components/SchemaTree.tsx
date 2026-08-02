@@ -80,7 +80,7 @@ export function SchemaTree() {
                   >
                     {t.type === "view" ? <Eye size={12} /> : <Table2 size={12} />}
                     <span className="truncate">{t.name}</span>
-                    <span className="ml-auto text-[10px] text-muted">{t.columns.length}</span>
+                    <span className="ml-auto text-[10px] text-muted">{(t.columns ?? []).length}</span>
                   </button>
                 ))}
             </div>

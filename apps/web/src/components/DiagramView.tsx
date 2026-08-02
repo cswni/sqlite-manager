@@ -74,13 +74,13 @@ export function DiagramView() {
       position: { x: 0, y: 0 },
       data: {
         label: t.name,
-        cols: t.columns.map((c) => `${c.name} ${c.type}${c.primaryKey ? " PK" : ""}`),
+        cols: (t.columns ?? []).map((c) => `${c.name} ${c.type}${c.primaryKey ? " PK" : ""}`),
         selected: t.name === selectedTable,
       },
     }));
     const es: Edge[] = [];
     for (const t of tables) {
-      for (const fk of t.foreignKeys) {
+      for (const fk of t.foreignKeys ?? []) {
         es.push({
           id: `${t.name}-${fk.from}-${fk.table}-${fk.to}`,
           source: t.name,

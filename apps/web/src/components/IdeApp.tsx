@@ -5,7 +5,7 @@ import { SchemaTree } from "@/components/SchemaTree";
 import { SqlEditor } from "@/components/SqlEditor";
 import { WelcomeView } from "@/components/WelcomeView";
 import { DiagramView } from "@/components/DiagramView";
-import { DataView, DesignerView } from "@/components/DataDesigner";
+import { DataView, DesignerView, ViewErrorBoundary } from "@/components/DataDesigner";
 import { MigrationsView, IoView } from "@/components/MigrationsIo";
 import { StatusBar } from "@/components/ui";
 import { AppProvider, useApp } from "@/lib/store";
@@ -19,13 +19,15 @@ function Shell() {
         <ActivityBar />
         {view !== "welcome" && <SchemaTree />}
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-bg">
-          {view === "welcome" && <WelcomeView />}
-          {view === "sql" && <SqlEditor />}
-          {view === "data" && <DataView />}
-          {view === "diagram" && <DiagramView />}
-          {view === "designer" && <DesignerView />}
-          {view === "migrations" && <MigrationsView />}
-          {view === "io" && <IoView />}
+          <ViewErrorBoundary key={view}>
+            {view === "welcome" && <WelcomeView />}
+            {view === "sql" && <SqlEditor />}
+            {view === "data" && <DataView />}
+            {view === "diagram" && <DiagramView />}
+            {view === "designer" && <DesignerView />}
+            {view === "migrations" && <MigrationsView />}
+            {view === "io" && <IoView />}
+          </ViewErrorBoundary>
         </main>
       </div>
       <StatusBar>

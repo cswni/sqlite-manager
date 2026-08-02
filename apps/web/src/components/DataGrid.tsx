@@ -10,6 +10,8 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { QueryResult } from "@/lib/types";
 
+const ROW_H = 28;
+
 export function DataGrid({
   result,
   onEdit,
@@ -32,14 +34,17 @@ export function DataGrid({
         const display = v === null || v === undefined ? "NULL" : String(v);
         if (!onEdit || !pkCol) {
           return (
-            <span className={v == null ? "italic text-muted" : ""} title={display}>
+            <span
+              className={`block max-w-[28rem] truncate px-2 py-1 ${v == null ? "italic text-muted" : ""}`}
+              title={display}
+            >
               {display}
             </span>
           );
         }
         return (
           <input
-            className="h-full w-full min-w-[6rem] border-0 bg-transparent px-1 font-mono text-[12px] outline-none focus:bg-selection"
+            className="h-7 w-full min-w-[6rem] border-0 bg-transparent px-2 font-mono text-[12px] outline-none focus:bg-selection"
             defaultValue={v == null ? "" : String(v)}
             onBlur={(e) => {
               const next = e.target.value;
@@ -59,12 +64,19 @@ export function DataGrid({
   });
 
   const rows = table.getRowModel().rows;
+  const colCount = (result?.columns.length ?? 0) + 1;
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 26,
-    overscan: 20,
+    estimateSize: () => ROW_H,
+    overscan: 16,
   });
+  const virtualRows = virtualizer.getVirtualItems();
+  const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
+  const paddingBottom =
+    virtualRows.length > 0
+      ? virtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
+      : 0;
 
   if (!result) {
     return (
@@ -85,55 +97,52 @@ export function DataGrid({
 
   return (
     <div ref={parentRef} className="min-h-0 flex-1 overflow-auto font-mono text-[12px]">
-      <div style={{ height: virtualizer.getTotalSize() + 28, position: "relative" }}>
-        <table className="w-max min-w-full border-collapse">
-          <thead className="sticky top-0 z-10 bg-surface-2">
-            {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id}>
-                <th className="border-b border-r border-border px-2 py-1 text-left text-[10px] font-semibold text-muted">
-                  #
+      <table className="w-max min-w-full border-collapse">
+        <thead className="sticky top-0 z-10 bg-surface-2">
+          {table.getHeaderGroups().map((hg) => (
+            <tr key={hg.id}>
+              <th className="w-10 border-b border-r border-border px-2 py-1.5 text-left text-[10px] font-semibold text-muted">
+                #
+              </th>
+              {hg.headers.map((h) => (
+                <th
+                  key={h.id}
+                  className="border-b border-r border-border px-2 py-1.5 text-left text-[11px] font-semibold text-ink whitespace-nowrap"
+                >
+                  {flexRender(h.column.columnDef.header, h.getContext())}
                 </th>
-                {hg.headers.map((h) => (
-                  <th
-                    key={h.id}
-                    className="border-b border-r border-border px-2 py-1 text-left text-[11px] font-semibold text-ink"
-                  >
-                    {flexRender(h.column.columnDef.header, h.getContext())}
-                  </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {paddingTop > 0 && (
+            <tr aria-hidden>
+              <td colSpan={colCount} style={{ height: paddingTop, padding: 0, border: "none" }} />
+            </tr>
+          )}
+          {virtualRows.map((vr) => {
+            const row = rows[vr.index];
+            return (
+              <tr key={row.id} className="hover:bg-selection/70" style={{ height: ROW_H }}>
+                <td className="border-b border-r border-border px-2 text-muted tabular-nums">
+                  {vr.index + 1}
+                </td>
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id} className="border-b border-r border-border p-0 align-middle">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
                 ))}
               </tr>
-            ))}
-          </thead>
-          <tbody>
-            {virtualizer.getVirtualItems().map((vr) => {
-              const row = rows[vr.index];
-              return (
-                <tr
-                  key={row.id}
-                  className="hover:bg-selection/60"
-                  style={{
-                    height: vr.size,
-                    transform: `translateY(${vr.start}px)`,
-                    position: "absolute",
-                    top: 28,
-                    left: 0,
-                    width: "100%",
-                    display: "table",
-                    tableLayout: "fixed",
-                  }}
-                >
-                  <td className="border-b border-r border-border px-2 text-muted">{vr.index + 1}</td>
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="border-b border-r border-border px-0">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+            );
+          })}
+          {paddingBottom > 0 && (
+            <tr aria-hidden>
+              <td colSpan={colCount} style={{ height: paddingBottom, padding: 0, border: "none" }} />
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

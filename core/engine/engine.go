@@ -199,15 +199,24 @@ func (e *Engine) Schema(connID string) (*SchemaResult, error) {
 		if err != nil {
 			return nil, err
 		}
+		if cols == nil {
+			cols = []Column{}
+		}
 		t.Columns = cols
 		idxs, err := e.indexes(db, t.Name)
 		if err != nil {
 			return nil, err
 		}
+		if idxs == nil {
+			idxs = []IndexInfo{}
+		}
 		t.Indexes = idxs
 		fks, err := e.fks(db, t.Name)
 		if err != nil {
 			return nil, err
+		}
+		if fks == nil {
+			fks = []ForeignKey{}
 		}
 		t.FKs = fks
 		tables = append(tables, t)

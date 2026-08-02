@@ -69,10 +69,20 @@ fn sidecar_name() -> String {
 fn start_process(
     bin: std::path::PathBuf,
 ) -> Result<(Child, ChildStdin, BufReader<std::process::ChildStdout>), String> {
-    let mut child = Command::new(&bin)
-        .stdin(Stdio::piped())
+    let mut cmd = Command::new(&bin);
+    cmd.stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
+        .stderr(Stdio::null());
+
+    // Hide the sidecar console window on Windows (avoids a second cmd popping up)
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let mut child = cmd
         .spawn()
         .map_err(|e| format!("spawn {}: {e}", bin.display()))?;
     let stdin = child.stdin.take().ok_or("no stdin")?;

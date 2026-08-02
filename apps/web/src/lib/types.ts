@@ -40,9 +40,9 @@ export type TableSchema = {
   name: string;
   type: string;
   sql?: string;
-  columns: Column[];
-  indexes: IndexInfo[];
-  foreignKeys: ForeignKey[];
+  columns?: Column[] | null;
+  indexes?: IndexInfo[] | null;
+  foreignKeys?: ForeignKey[] | null;
 };
 
 export type SchemaResult = { tables: TableSchema[] };
