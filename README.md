@@ -2,6 +2,16 @@
 
 Dense local IDE for SQLite — schema explorer, SQL editor, data grid, ER diagram, designer, migrations, import/export, and MCP.
 
+## Docs
+
+MkDocs Material site in `docs/` — config `mkdocs.yml`. Publishes to GitHub Pages on push to `main`/`master` (`.github/workflows/docs.yml`).
+
+```bash
+pip install -r requirements-docs.txt
+mkdocs serve   # local preview
+mkdocs build   # output in site/
+```
+
 ## Stack
 
 | Layer | Tech |

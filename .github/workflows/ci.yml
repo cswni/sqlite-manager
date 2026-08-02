@@ -13,13 +13,17 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
+          cache-dependency-path: |
+            core/go.sum
+            mcp/go.sum
       - name: Test Go core
         working-directory: core
         run: go test ./...
       - name: Build core + mcp
         run: |
-          go build -o bin/sqliteman-core ./core/cmd/sqliteman-core
-          go build -o bin/sqliteman-mcp ./mcp/cmd/sqliteman-mcp
+          mkdir -p bin
+          (cd core && go build -o ../bin/sqliteman-core ./cmd/sqliteman-core)
+          (cd mcp && go build -o ../bin/sqliteman-mcp ./cmd/sqliteman-mcp)
 
   web:
     runs-on: ubuntu-latest
@@ -36,7 +40,7 @@ jobs:
       - name: Install & build
         working-directory: apps/web
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm build
 
   desktop-check:
@@ -44,6 +48,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux Tauri deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev
+      - name: Stage stub sidecar for tauri-build
+        run: |
+          mkdir -p apps/desktop/src-tauri/binaries
+          # tauri-build requires the externalBin path to exist at check time
+          touch apps/desktop/src-tauri/binaries/sqliteman-core-x86_64-unknown-linux-gnu
+          chmod +x apps/desktop/src-tauri/binaries/sqliteman-core-x86_64-unknown-linux-gnu
       - name: Cargo check
         working-directory: apps/desktop/src-tauri
         run: cargo check

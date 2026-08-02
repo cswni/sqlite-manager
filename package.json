@@ -11,6 +11,8 @@
     "build:mcp": "go build -o bin/sqliteman-mcp$([ \"$OS\" = Windows_NT ] && echo .exe) ./mcp/cmd/sqliteman-mcp",
     "test:core": "cd core && go test ./...",
     "desktop:dev": "pnpm --dir apps/desktop tauri dev",
-    "desktop:build": "pnpm --dir apps/desktop tauri build"
+    "desktop:build": "pnpm --dir apps/desktop tauri build",
+    "docs:serve": "mkdocs serve",
+    "docs:build": "mkdocs build --strict"
   }
 }

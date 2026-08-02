@@ -1,8 +1,8 @@
 site_name: SQLite Manager
 site_description: Dense local IDE for SQLite — schema, SQL, diagrams, migrations, MCP
-site_url: https://sqlite-manager.github.io/sqlite-manager/
-repo_url: https://github.com/sqlite-manager/sqlite-manager
-repo_name: sqlite-manager/sqlite-manager
+site_url: https://cswni.github.io/sqlite-manager/
+repo_url: https://github.com/cswni/sqlite-manager
+repo_name: cswni/sqlite-manager
 edit_uri: edit/main/docs/
 
 theme:
@@ -68,4 +68,4 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/sqlite-manager/sqlite-manager
+      link: https://github.com/cswni/sqlite-manager
