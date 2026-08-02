@@ -133,15 +133,20 @@ jobs:
 
   release-go-assets:
     needs: [build-binaries, tauri-release]
+    if: always() && needs.build-binaries.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: go-*
+          merge-multiple: true
       - name: Upload Go assets to release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          tag_name: ${{ github.ref_name }}
+          files: artifacts/**
           draft: true
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

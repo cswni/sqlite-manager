@@ -1,34 +1,49 @@
-"""Generate RGBA PNG icons + ICO for Tauri (must be RGBA)."""
+"""Generate proper RGBA PNG (+ ICO) icons for Tauri using Pillow."""
 from pathlib import Path
-import struct
-import zlib
+
+from PIL import Image, ImageDraw
 
 
-def png_rgba(w: int, h: int, rgb=(32, 120, 110), a=255) -> bytes:
-    def chunk(t: bytes, d: bytes) -> bytes:
-        return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
-
-    pixel = bytes([rgb[0], rgb[1], rgb[2], a])
-    raw = b"".join(b"\x00" + pixel * w for _ in range(h))
-    return (
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))  # color type 6 = RGBA
-        + chunk(b"IDAT", zlib.compress(raw, 9))
-        + chunk(b"IEND", b"")
+def make(size: int, rgb=(32, 120, 110)) -> Image.Image:
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # solid rounded square
+    margin = max(1, size // 16)
+    d.rounded_rectangle(
+        [margin, margin, size - margin - 1, size - margin - 1],
+        radius=max(2, size // 8),
+        fill=(*rgb, 255),
     )
-
-
-def ico_from_png(png_bytes: bytes) -> bytes:
-    header = struct.pack("<HHH", 0, 1, 1)
-    entry = struct.pack("<BBBBHHII", 0, 0, 0, 0, 1, 32, len(png_bytes), 22)
-    return header + entry + png_bytes
+    # simple "table" mark
+    inset = size // 4
+    d.rectangle([inset, inset, size - inset, size - inset], outline=(255, 255, 255, 230), width=max(1, size // 32))
+    mid = size // 2
+    d.line([inset, mid, size - inset, mid], fill=(255, 255, 255, 200), width=max(1, size // 48))
+    d.line([mid, inset, mid, size - inset], fill=(255, 255, 255, 200), width=max(1, size // 48))
+    return img
 
 
 root = Path("apps/desktop/src-tauri/icons")
 root.mkdir(parents=True, exist_ok=True)
-rgb = (32, 120, 110)
-for name, size in [("icon.png", 128), ("32x32.png", 32), ("128x128.png", 128), ("henry.w@example.net", 256)]:
-    (root / name).write_bytes(png_rgba(size, size, rgb))
-png256 = png_rgba(256, 256, rgb)
-(root / "icon.ico").write_bytes(ico_from_png(png256))
-print("RGBA icons ok")
+
+sizes = {
+    "32x32.png": 32,
+    "128x128.png": 128,
+    "henry.w@example.net": 256,
+    "icon.png": 512,
+}
+for name, size in sizes.items():
+    make(size).save(root / name, format="PNG")
+
+# Multi-size ICO for Windows
+ico_imgs = [make(s) for s in (16, 32, 48, 64, 128, 256)]
+ico_imgs[0].save(root / "icon.ico", format="ICO", sizes=[(im.width, im.height) for im in ico_imgs])
+
+# ICNS when Pillow supports it (needed for macOS bundle)
+try:
+    make(1024).save(root / "icon.icns", format="ICNS")
+    print("wrote icon.icns")
+except Exception as e:
+    print("icns skip:", e)
+
+print("icons ok", list(root.iterdir()))
