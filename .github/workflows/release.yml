@@ -33,6 +33,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
+          cache-dependency-path: |
+            core/go.sum
+            mcp/go.sum
       - name: Build Go binaries
         env:
           GOOS: ${{ matrix.goos }}
@@ -41,8 +44,8 @@ jobs:
         run: |
           EXT=""
           if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
-          go build -o "sqliteman-core-${{ matrix.suffix }}${EXT}" ./core/cmd/sqliteman-core
-          go build -o "sqliteman-mcp-${{ matrix.suffix }}${EXT}" ./mcp/cmd/sqliteman-mcp
+          (cd core && go build -o "../sqliteman-core-${{ matrix.suffix }}${EXT}" ./cmd/sqliteman-core)
+          (cd mcp && go build -o "../sqliteman-mcp-${{ matrix.suffix }}${EXT}" ./cmd/sqliteman-mcp)
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
@@ -64,7 +67,7 @@ jobs:
             triple: aarch64-apple-darwin
             artifact: go-darwin-arm64
             core: sqliteman-core-darwin-arm64
-          - platform: ubuntu-22.04
+          - platform: ubuntu-latest
             args: ""
             triple: x86_64-unknown-linux-gnu
             artifact: go-linux-amd64
@@ -95,7 +98,7 @@ jobs:
         with:
           targets: ${{ matrix.triple }}
       - name: Linux deps
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libgtk-3-dev pkg-config
