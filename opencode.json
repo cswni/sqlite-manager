@@ -1,0 +1,17 @@
+{
+  "mcp": {
+    "blueprint": {
+      "command": [
+        "blueprint",
+        "mcp",
+        "--tools",
+        "agent"
+      ],
+      "enabled": true,
+      "environment": {
+        "BLUEPRINT_PROJECT": "sqlite-manager"
+      },
+      "type": "local"
+    }
+  }
+}

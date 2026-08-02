@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Test Go core
+        working-directory: core
+        run: go test ./...
+      - name: Build core + mcp
+        run: |
+          go build -o bin/sqliteman-core ./core/cmd/sqliteman-core
+          go build -o bin/sqliteman-mcp ./mcp/cmd/sqliteman-mcp
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: Install & build
+        working-directory: apps/web
+        run: |
+          pnpm install
+          pnpm build
+
+  desktop-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cargo check
+        working-directory: apps/desktop/src-tauri
+        run: cargo check

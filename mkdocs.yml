@@ -1,0 +1,71 @@
+site_name: SQLite Manager
+site_description: Dense local IDE for SQLite — schema, SQL, diagrams, migrations, MCP
+site_url: https://sqlite-manager.github.io/sqlite-manager/
+repo_url: https://github.com/sqlite-manager/sqlite-manager
+repo_name: sqlite-manager/sqlite-manager
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: IBM Plex Sans
+    code: IBM Plex Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Install: getting-started/install.md
+      - Develop: getting-started/develop.md
+      - Desktop: getting-started/desktop.md
+  - Guides:
+      - SQL editor: guides/sql.md
+      - Diagram & data: guides/diagram-data.md
+      - Migrations: guides/migrations.md
+      - Import & export: guides/import-export.md
+  - Architecture: architecture.md
+  - MCP: mcp.md
+  - Releases: releases.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/sqlite-manager/sqlite-manager

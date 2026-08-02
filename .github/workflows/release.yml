@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-binaries:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            suffix: windows-amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Build Go binaries
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          EXT=""
+          if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
+          go build -o "sqliteman-core-${{ matrix.suffix }}${EXT}" ./core/cmd/sqliteman-core
+          go build -o "sqliteman-mcp-${{ matrix.suffix }}${EXT}" ./mcp/cmd/sqliteman-mcp
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-${{ matrix.suffix }}
+          path: |
+            sqliteman-core-${{ matrix.suffix }}*
+            sqliteman-mcp-${{ matrix.suffix }}*
+
+  tauri-release:
+    needs: build-binaries
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+            triple: aarch64-apple-darwin
+            artifact: go-darwin-arm64
+            core: sqliteman-core-darwin-arm64
+          - platform: ubuntu-22.04
+            args: ""
+            triple: x86_64-unknown-linux-gnu
+            artifact: go-linux-amd64
+            core: sqliteman-core-linux-amd64
+          - platform: windows-latest
+            args: ""
+            triple: x86_64-pc-windows-msvc
+            artifact: go-windows-amd64
+            core: sqliteman-core-windows-amd64.exe
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: Install frontend deps
+        working-directory: apps/web
+        run: pnpm install
+      - name: Install desktop deps
+        working-directory: apps/desktop
+        run: pnpm install
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.triple }}
+      - name: Linux deps
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: go-bins
+      - name: Stage sidecar
+        shell: bash
+        run: |
+          mkdir -p apps/desktop/src-tauri/binaries
+          SRC="go-bins/${{ matrix.core }}"
+          if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+            cp "$SRC" "apps/desktop/src-tauri/binaries/sqliteman-core-${{ matrix.triple }}.exe"
+          else
+            cp "$SRC" "apps/desktop/src-tauri/binaries/sqliteman-core-${{ matrix.triple }}"
+            chmod +x "apps/desktop/src-tauri/binaries/sqliteman-core-${{ matrix.triple }}"
+          fi
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop/src-tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: SQLite Manager ${{ github.ref_name }}
+          releaseBody: |
+            Desktop builds and Go sidecars for SQLite Manager.
+            MCP binary is attached as a Go artifact from this workflow.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  release-go-assets:
+    needs: [build-binaries, tauri-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Upload Go assets to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
